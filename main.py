@@ -1,11 +1,16 @@
-class Reference:
-    def __init__(
-        self,
-        resting_heart_rate,
-        normal_temp,
-        normal_skin_response
-    ):
-        self.resting_heart_rate = resting_heart_rate # bpm
-        self.normal_temperature = normal_temp
-        self.normal_skin_response = normal_skin_response
+class ReferenceProfile:
+    def __init__(self, resting_hr, normal_temp, normal_skin):
+        self.normal_temp = normal_temp
+        self.resting_hr = resting_hr
+        self.normal_skin = normal_skin
 
+    @property
+    def resting_hr(self):
+        return self.__resting_hr
+
+    @resting_hr.setter
+    def resting_hr(self, value):
+        if not isinstance(value, (int, float)) or value <= 0:
+            raise ValueError("A resting heart rate has to be a positive number.")
+
+        self.__resting_hr = value
