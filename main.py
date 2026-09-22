@@ -92,3 +92,57 @@ class Observation:
 
         except KeyError:
             return None
+
+class Session:
+    def __init__(self, member, observations):
+        self.member = member
+        self.observations = observations
+
+    def classify(self, usable, summaries):
+        return "Unclassified", "The session was not classified."
+
+
+class FitnessSession(Session):
+
+    def classify(self, usable, summaries):
+        if len(usable) < 3:
+            return (
+                "Insufficient data",
+                "There were fewer than 3 usable observations."
+            )
+
+        ref = self.member.profile
+
+        avg_hr = summaries["Heart rate"]["average"]
+        avg_act = summaries["Activity level"]["average"]
+
+        if detect_recovery(usable, ref):
+            return (
+                "Recovering",
+                "Heart rate and activity level decreased near the end "
+                "of the session after being elevated earlier."
+            )
+
+        if avg_hr >= ref.resting_hr + 60 or avg_act >= 0.75:
+            return (
+                "High activity",
+                f"The average heart rate was {avg_hr:.1f} bpm and the average activity"
+                f"level was {avg_act:.2f}. These values were high compared"
+                f"with the reference values, which indicates a high activity level"
+            )
+
+        if avg_hr >= ref.resting_hr + 20 or avg_act >= 0.35:
+            return (
+                "Moderate activity level",
+                f"The participants average heart rate was {avg_hr:.1f} bpm compared with "
+                f"the resting heart rate of {ref.resting_hr} bpm.While the Average "
+                f"activity level was {avg_act:.2f}. Both values were above "
+                f"resting level, but not high enough for classification of high activity."
+            )
+
+        return (
+            "Resting",
+            f"The participants avg heart rate was {avg_hr:.1f} bpm, and is close to "
+            f"their resting heart rate of {ref.resting_hr} bpm. While their average"
+            f"activity level was only {avg_act:.2f}."
+        )
