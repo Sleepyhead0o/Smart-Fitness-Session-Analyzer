@@ -81,6 +81,7 @@ Observations with a below 0.60 signal quality are rejected.
 - Skin response and temperature are compared with baseline values.
 
 ## Example output
+```text
 Scenario: moderate_activity
 Participant: P001
 Usable observations: 12/12
@@ -97,4 +98,4 @@ Signal quality            0.90      0.83      0.98
 
 Explanation:
 The activity level is moderate and heart rate is 28.5 bpm above baseline. Skin response differs from baseline by 0.34 and temperature differs by 0.25 °C.
-
+```
