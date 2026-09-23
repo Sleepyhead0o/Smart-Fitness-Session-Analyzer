@@ -24,7 +24,7 @@ Smart-Fitness-Session-Analyzer/
 
 ## Project description
 
-This project is a small and simple object-oriented Python application. That analyzes simulated fitness-session data.
+This project is a small and simple object oriented Python program. That analyzes simulated fitness-session data.
 
 The program receives a participant profile and a list of observations from the `data_generator.py`. The generator returns raw dictionaries and lists. While the program converts the data into objects, validates the measurements, analyzes the session, classifies the activity level and prints out a report.
 
@@ -41,12 +41,12 @@ for heart rate, skin response, temperature, activity level and signal quality. A
 
 ## Class design and responsiblity 
 
-- `Ref` – stores baseline heart rate, skin response and temperature.
-- `Person` – represents a participant and contains a `Ref`.
+- `Ref` – stores baseline heart rate, skin response and temperature. It also validates these values using properties and setters. 
+- `Person` – represents a participant ID and contains a `Ref` object.
 - `Obs` – represents and validates one observation.
 - `Session` – contains a participant and multiple observations.
-- `ActivityAnalysis` – classifies resting, moderate and high activity.
-- `RecoveryAnalysis` – checks whether heart rate and activity decrease.
+- `ActivityAnalysis` – classifies resting, moderate and high activity based on activity level and heart rate compared with baseline.
+- `RecoveryAnalysis` – checks whether heart rate and activity decrease near the end of the session.
 - `FitnessAnalyzer` – combines the analysis and creates the final result.
 
 ## Object oriented programming concepts used
@@ -72,9 +72,10 @@ I have not used inheritance or method overriding. The classes do not have a natu
 - **Insufficient data:** usable observations fewer than 3 or less than 50% of the observations are usable.
 
 Observations with a below 0.60 signal quality are rejected.
+
 ## Assumptions
 
-- The provided `data_generator.py` is not modified.
+- Data_generator.py is not modified.
 - Signal quality below `0.60` is considered unreliable.
 - Classification is rule-based.
 - Heart rate and activity level are the main values used for classification.
