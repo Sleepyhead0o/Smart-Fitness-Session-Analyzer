@@ -1,7 +1,7 @@
 from statistics import mean
 from data_generator import available_scenarios, generate_fitness_data
 
-
+# reference
 class Ref:
     def __init__(self, hr, sk, tp):
         self.hr = hr
@@ -53,19 +53,19 @@ class Ref:
 
 class Person:
     def __init__(self, pid, ref):
-        self.pid = pid
+        self.pid = pid # participant id
         self.ref = ref
 
 
 # One observation
 class Obs:
     def __init__(self, t, hr, sk, tp, act, q):
-        self.t = t
-        self.hr = hr
-        self.sk = sk
-        self.tp = tp
-        self.act = act
-        self.q = q
+        self.t = t          # timestamp
+        self.hr = hr        # heart rate
+        self.sk = sk        # skin response
+        self.tp = tp        # temperature
+        self.act = act      # activity level
+        self.q = q          # signal quality
 
         self.ok, self.err = self.validate()
 
@@ -123,9 +123,9 @@ class Obs:
 # Multiple observations
 class Session:
     def __init__(self, p, obs, sc):
-        self.p = p
-        self.obs = obs
-        self.sc = sc
+        self.p = p          # person
+        self.obs = obs      # observations
+        self.sc = sc        # scenario
 
     @property
     def good(self):
@@ -145,7 +145,7 @@ class ActivityAnalysis:
 
         dhr = avg(hr) - s.p.ref.hr
 
-        if avg(ac) >= 0.67 or dhr >= 45:
+        if avg(ac) >= 0.67 or dhr >= 45:    # dhr heart rate difference
             return "high activity"
 
         if avg(ac) >= 0.30 or dhr >= 15:
@@ -155,8 +155,8 @@ class ActivityAnalysis:
 
 
 class RecoveryAnalysis:
-    def check(self, s):
-        g = s.good
+    def check(self, s):     # s session
+        g = s.good          # usable observation
 
         if len(g) < 6:
             return False
@@ -195,7 +195,7 @@ class FitnessAnalyzer:
 
     def analyze(self, s):
         g = s.good
-        c = self.classify(s)
+        c = self.classify(s)    # c classification
 
         r = {
             "participant": s.p.pid,
@@ -278,7 +278,7 @@ class FitnessAnalyzer:
         return r
 
 
-def avg(v):
+def avg(v):         # v value 
     if not v:
         return 0.0
 
@@ -305,7 +305,7 @@ def drop(v):
     return a - b
 
 
-def build_session(pd, od, sc):
+def build_session(pd, od, sc):      # pd profile data, od observation data
     ref = Ref(
         pd["baseline_heart_rate"],
         pd["baseline_skin_response"],

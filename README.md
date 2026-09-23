@@ -5,8 +5,8 @@ Name: Celina Jåsund
 Student number: s374172
 
 ## How to start the project:
-git clone git@github.com:Sleepyhead0o/Smart-Fitness-Session-Analyzer.git
-cd Smart-Fitness-Session-Analyzer 
+git clone git@github.com:Sleepyhead0o/Smart-Fitness-Session-Analyzer.git </br>
+cd Smart-Fitness-Session-Analyzer </br>
 conda env create -f env.yml </br>
 conda activate fitness-analyzer </br>
 python main.py </br>
