@@ -1,93 +1,143 @@
 import unittest
 
+from data_generator import generate_fitness_data
+
 from main import (
-    ReferenceProfile,
-    Member,
-    Observation,
-    FitnessSession
+    Ref,
+    Obs,
+    FitnessAnalyzer,
+    build_session
 )
 
-from sample_data import SCENARIOS
 
-
-class TestFitnessAnalyzer(unittest.TestCase):
-
-    def setUp(self):
-        profile = ReferenceProfile(
-            resting_hr=65,
-            normal_temp=32.8,
-            normal_skin=1.5
-        )
-
-        self.member = Member(
-            "Test member",
-            profile
-        )
-
-    def get_result(self, name):
-        data = SCENARIOS[name]
-
-        obs = [
-            Observation.from_dict(item)
-            for item in data
-        ]
-
-        session = FitnessSession(
-            self.member,
-            obs
-        )
-
-        return session.analyze()
+class TestFitness(unittest.TestCase):
 
     def test_resting(self):
-        result = self.get_result(
-            "Resting session"
+        pd, od = generate_fitness_data(
+            participant_id="P001",
+            scenario="resting",
+            seed=42,
+            number_of_windows=12
         )
 
+        s = build_session(
+            pd,
+            od,
+            "resting"
+        )
+
+        a = FitnessAnalyzer()
+
         self.assertEqual(
-            result["classification"],
-            "Resting"
+            a.classify(s),
+            "resting"
         )
 
     def test_moderate(self):
-        result = self.get_result(
-            "Moderate activity"
+        pd, od = generate_fitness_data(
+            participant_id="P001",
+            scenario="moderate_activity",
+            seed=42,
+            number_of_windows=12
         )
 
+        s = build_session(
+            pd,
+            od,
+            "moderate_activity"
+        )
+
+        a = FitnessAnalyzer()
+
         self.assertEqual(
-            result["classification"],
-            "Moderate activity"
+            a.classify(s),
+            "moderate activity"
         )
 
     def test_high(self):
-        result = self.get_result(
-            "High activity"
+        pd, od = generate_fitness_data(
+            participant_id="P001",
+            scenario="high_activity",
+            seed=42,
+            number_of_windows=12
         )
 
+        s = build_session(
+            pd,
+            od,
+            "high_activity"
+        )
+
+        a = FitnessAnalyzer()
+
         self.assertEqual(
-            result["classification"],
-            "High activity"
+            a.classify(s),
+            "high activity"
         )
 
     def test_recovery(self):
-        result = self.get_result(
-            "Recovery session"
+        pd, od = generate_fitness_data(
+            participant_id="P001",
+            scenario="recovery",
+            seed=42,
+            number_of_windows=12
         )
+
+        s = build_session(
+            pd,
+            od,
+            "recovery"
+        )
+
+        a = FitnessAnalyzer()
 
         self.assertEqual(
-            result["classification"],
-            "Recovering"
+            a.classify(s),
+            "recovering"
         )
 
-    def test_bad_data(self):
-        result = self.get_result(
-            "Poor sensor data"
+    def test_poor_quality(self):
+        pd, od = generate_fitness_data(
+            participant_id="P001",
+            scenario="poor_quality",
+            seed=42,
+            number_of_windows=12
         )
+
+        s = build_session(
+            pd,
+            od,
+            "poor_quality"
+        )
+
+        a = FitnessAnalyzer()
 
         self.assertEqual(
-            result["classification"],
-            "Insufficient data"
+            a.classify(s),
+            "insufficient data"
         )
+
+    def test_invalid_hr(self):
+        d = {
+            "timestamp": 0,
+            "heart_rate": 265,
+            "skin_response": 1.5,
+            "temperature": 32.5,
+            "activity_level": 0.5,
+            "signal_quality": 0.9
+        }
+
+        o = Obs.from_dict(d)
+
+        self.assertFalse(o.ok)
+
+    def test_private_hr(self):
+        with self.assertRaises(ValueError):
+            Ref(
+                -10,
+                1.5,
+                32.5
+            )
 
 
 if __name__ == "__main__":

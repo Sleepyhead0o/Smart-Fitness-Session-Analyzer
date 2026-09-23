@@ -1,306 +1,335 @@
 from statistics import mean
-from sample_data import SCENARIOS
+from data_generator import available_scenarios, generate_fitness_data
 
-class ReferenceProfile:
-    def __init__(self, resting_hr, normal_temp, normal_skin):
-        self.normal_temp = normal_temp
-        self.resting_hr = resting_hr
-        self.normal_skin = normal_skin
+
+class Ref:
+    def __init__(self, hr, sk, tp):
+        self.hr = hr
+        self.sk = sk
+        self.tp = tp
 
     @property
-    def resting_hr(self):
-        return self.__resting_hr
+    def hr(self):
+        return self.__hr
 
-    @resting_hr.setter
-    def resting_hr(self, value):
-        if not isinstance(value, (int, float)) or value <= 0:
-            raise ValueError("A resting heart rate has to be a positive number.")
+    @hr.setter
+    def hr(self, v):
+        if not isinstance(v, (int, float)) or v <= 0:
+            raise ValueError("Invalid baseline heart rate")
 
-        self.__resting_hr = value
+        self.__hr = v
 
-# participant
-class Member:
-    def __init__(self, name, profile):
-        self.name = name
-        self.profile = profile
 
-class Observation:
-    def __init__(
-        self,
-        timestamp,
-        heart_Rate,
-        skin_response,
-        temp,
-        activity_level,
-        signal_quality
-    ):
-        self.timestamp = timestamp
-        self.skin_response = skin_response
-        self.heart_Rate = heart_Rate
-        self.temp = temp
-        self.activity_level = activity_level
-        self.signal_quality = signal_quality
+class Person:
+    def __init__(self, pid, ref):
+        self.pid = pid
+        self.ref = ref
 
-    @staticmethod
-    def is_number(value):
-        return isinstance(value, (int, float)) and not isinstance(value, bool)
+# One Observation
+class Obs:
+    def __init__(self, t, hr, sk, tp, act, q):
+        self.t = t
+        self.hr = hr
+        self.sk = sk
+        self.tp = tp
+        self.act = act
+        self.q = q
 
-    def is_valid(self):
-        if not self.is_number(self.heart_Rate):
-            return False
-
-        if not self.is_number(self.skin_response):
-            return False
-
-        if not self.is_number(self.temp):
-            return False
-
-        if not self.is_number(self.activity_level):
-            return False
-
-        if not self.is_number(self.signal_quality):
-            return False
-
-        if not 30 <= self.heart_Rate <= 220:
-            return False
-
-        if not 0 <= self.skin_response <= 20:
-            return False
-
-        if not 25 <= self.temp <= 45:
-            return False
-
-        if not 0 <= self.activity_level <= 1:
-            return False
-
-        if not 0 <= self.signal_quality <= 1:
-            return False
-
-        return True
-
-    def is_usable(self):
-        return self.is_valid() and self.signal_quality >= 0.50
+        self.ok, self.err = self.validate()
 
     @classmethod
-    def from_dict(cls, data):
-        try:
-            return cls(
-                data["timestamp"],
-                data["heart_Rate"],
-                data["skin_response"],
-                data["temp"],
-                data["activity_level"],
-                data["signal_quality"]
-            )
+    def from_dict(cls, d):
+        return cls(
+            d.get("timestamp"),
+            d.get("heart_rate"),
+            d.get("skin_response"),
+            d.get("temperature"),
+            d.get("activity_level"),
+            d.get("signal_quality")
+        )
 
-        except KeyError:
-            return None
+    def validate(self):
+        if not isinstance(self.t, int) or self.t < 0:
+            return False, "Invalid timestamp. A timestamp must be an integer with a number greater than or equal to 0"
 
+        if (
+            not isinstance(self.hr, (int, float))
+            or not 35 <= self.hr <= 205
+        ):
+            return False, "Invalid heart rate. It have to be a number between 35 and 205."
+
+        if (
+            not isinstance(self.sk, (int, float))
+            or self.sk < 0
+        ):
+            return False, "Invalid skin response. It have to be a number and cannot be negative."
+
+        if (
+            not isinstance(self.tp, (int, float))
+            or not 25 <= self.tp <= 42
+        ):
+            return False, "Invalid temperature. It have to be a number between 25 and 42."
+
+        if (
+            not isinstance(self.act, (int, float))
+            or not 0 <= self.act <= 1
+        ):
+            return False, "Invalid activity level. It have to be a number between 0 and 1."
+
+        if (
+            not isinstance(self.q, (int, float))
+            or not 0 <= self.q <= 1
+        ):
+            return False, "Invalid signal quality. It have to be a number between 0 and 1."
+
+        if self.q < 0.60:
+            return False, "Poor signal quality. The value must be 0.60 or higher."
+
+        return True, ""
+
+# Multiple observations
 class Session:
-    def __init__(self, member, observations):
-        self.member = member
-        self.observations = observations
+    def __init__(self, p, obs, sc):
+        self.p = p
+        self.obs = obs
+        self.sc = sc
 
-    def classify(self, usable, summaries):
-        return "Unclassified", "The session was not classified."
+    @property
+    def good(self):
+        return [o for o in self.obs if o.ok]
 
 
-class FitnessSession(Session):
+class Analyzer:
+    def classify(self, s):
+        raise NotImplementedError
 
-    def classify(self, usable, summaries):
-        if len(usable) < 3:
-            return (
-                "Insufficient data",
-                "There were fewer than 3 usable observations."
-            )
+# FitnessAnalyzer inherits from Analyzer. Method overriding
+class FitnessAnalyzer(Analyzer):
+    def classify(self, s):
+        g = s.good
 
-        ref = self.member.profile
+        if len(g) < 3:
+            return "insufficient data"
 
-        avg_hr = summaries["Heart rate"]["average"]
-        avg_act = summaries["Activity level"]["average"]
+        if len(g) / len(s.obs) < 0.50:
+            return "insufficient data"
 
-        if detect_recovery(usable, ref):
-            return (
-                "Recovering",
-                "Heart rate and activity level decreased near the end "
-                "of the session after being elevated earlier."
-            )
+        hr = [o.hr for o in g]
+        ac = [o.act for o in g]
 
-        if avg_hr >= ref.resting_hr + 60 or avg_act >= 0.75:
-            return (
-                "High activity",
-                f"The participant have a average heart rate of {avg_hr:.1f} bpm compared with "
-                f"the resting heart rate of {ref.resting_hr} bpm.While the Average "
-                f"activity level was {avg_act:.2f}. These values were high compared"
-                f"with the reference values, which indicates a high activity level"
-            )
+        dhr = avg(hr) - s.p.ref.hr
 
-        if avg_hr >= ref.resting_hr + 20 or avg_act >= 0.35:
-            return (
-                "Moderate activity",
-                f"The participant have a average heart rate of {avg_hr:.1f} bpm compared with "
-                f"the resting heart rate of {ref.resting_hr} bpm.While the Average "
-                f"activity level was {avg_act:.2f}. Both values were above "
-                f"resting level, but not high enough for classification of high activity."
-            )
+        if drop(hr) >= 20 and drop(ac) >= 0.20:
+            return "recovering"
 
-        return (
-            "Resting",
-            f"The participant have a average heart rate of {avg_hr:.1f} bpm, and that is "
-            f"close to their resting heart rate of {ref.resting_hr} bpm. While their average"
-            f"activity level was only {avg_act:.2f}."
-        )
+        if avg(ac) >= 0.67 or dhr >= 45:
+            return "high activity"
 
-    def analyze(self):
-        usable = []
+        if avg(ac) >= 0.30 or dhr >= 15:
+            return "moderate activity"
 
-        for obs in self.observations:
-            if obs is not None and obs.is_usable():
-                usable.append(obs)
+        return "resting"
 
-        summaries = {}
+    def analyze(self, s):
+        g = s.good
+        c = self.classify(s)
 
-        if len(usable) > 0:
-            heart_rates = []
-            skin_values = []
-            temperatures = []
-            activity_values = []
-            quality_values = []
-
-            for obs in usable:
-                heart_rates.append(obs.heart_Rate)
-                skin_values.append(obs.skin_response)
-                temperatures.append(obs.temp)
-                activity_values.append(obs.activity_level)
-                quality_values.append(obs.signal_quality)
-
-            summaries["Heart rate"] = make_summary(heart_rates)
-            summaries["Skin response"] = make_summary(skin_values)
-            summaries["Temperature"] = make_summary(temperatures)
-            summaries["Activity level"] = make_summary(activity_values)
-            summaries["Signal quality"] = make_summary(quality_values)
-
-        classification, reason = self.classify(
-            usable,
-            summaries
-        )
-
-        return {
-            "member": self.member.name,
-            "classification": classification,
-            "reason": reason,
-            "usable": len(usable),
-            "total": len(self.observations),
-            "summaries": summaries
+        r = {
+            "participant": s.p.pid,
+            "scenario": s.sc,
+            "classification": c,
+            "usable": len(g),
+            "total": len(s.obs),
+            "rejected": len(s.obs) - len(g),
+            "summary": {},
+            "explanation": ""
         }
 
+        if not g:
+            r["explanation"] = (
+                "There are too few usable observations "
+                "to classify the session."
+            )
+            return r
 
-def average(values):
-    return mean(values)
+        r["summary"] = {
+            "heart_rate": stats(
+                [o.hr for o in g]
+            ),
+            "skin_response": stats(
+                [o.sk for o in g]
+            ),
+            "temperature": stats(
+                [o.tp for o in g]
+            ),
+            "activity_level": stats(
+                [o.act for o in g]
+            ),
+            "signal_quality": stats(
+                [o.q for o in g]
+            )
+        }
+
+        hr = r["summary"]["heart_rate"]["avg"]
+        ac = r["summary"]["activity_level"]["avg"]
+
+        dhr = hr - s.p.ref.hr
+
+        if c == "recovering":
+            txt = (
+                "Heart rate and activity decrease near the "
+                "end of the session. "
+                f"Average heart rate is {dhr:.1f} bpm "
+                "above the participant's baseline."
+            )
+
+        elif c == "high activity":
+            txt = (
+                f"Average activity level is {ac:.2f} and "
+                f"heart rate is {dhr:.1f} bpm above baseline."
+            )
+
+        elif c == "moderate activity":
+            txt = (
+                f"Average activity level is {ac:.2f} and "
+                f"heart rate is {dhr:.1f} bpm above baseline."
+            )
+
+        elif c == "resting":
+            txt = (
+                "Activity is low and heart rate is close "
+                f"to the baseline of {s.p.ref.hr} bpm."
+            )
+
+        else:
+            txt = (
+                "There are too few usable observations "
+                "to classify the session."
+            )
+
+        r["explanation"] = txt
+
+        return r
 
 
-def make_summary(values):
+def avg(v):
+    if not v:
+        return 0.0
+
+    return mean(v)
+
+
+def stats(v):
     return {
-        "average": average(values),
-        "minimum": min(values),
-        "maximum": max(values)
+        "avg": avg(v),
+        "min": min(v),
+        "max": max(v)
     }
 
 
-def detect_recovery(observations, ref):
-    if len(observations) < 4:
-        return False
+def drop(v):
+    if len(v) < 6:
+        return 0.0
 
-    heart_rates = []
-    activity = []
+    n = max(2, len(v) // 3)
 
-    for obs in observations:
-        heart_rates.append(obs.heart_Rate)
-        activity.append(obs.activity_level)
+    a = avg(v[:n])
+    b = avg(v[-n:])
 
-    peak_act = max(activity)
-    peak_hr = max(heart_rates)
+    return a - b
 
-    last_hr = [
-        observations[-2].heart_Rate,
-        observations[-1].heart_Rate
-    ]
 
-    last_act = [
-        observations[-2].activity_level,
-        observations[-1].activity_level
-    ]
-
-    end_hr = average(last_hr)
-    end_act = average(last_act)
-
-    return (
-        peak_hr >= ref.resting_hr + 40
-        and end_hr <= peak_hr - 20
-        and end_act <= peak_act - 0.20
+def build_session(pd, od, sc):
+    ref = Ref(
+        pd["baseline_heart_rate"],
+        pd["baseline_skin_response"],
+        pd["baseline_temperature"]
     )
 
-def print_report(result):
+    p = Person(
+        pd["participant_id"],
+        ref
+    )
+
+    obs = [
+        Obs.from_dict(d)
+        for d in od
+    ]
+
+    return Session(
+        p,
+        obs,
+        sc
+    )
+
+
+def print_report(r):
+    print("\n" + "=" * 58)
+
+    print("Scenario:", r["scenario"])
+    print("Participant:", r["participant"])
     print(
-        f"\nThe participant is {result['member']} and this session has "
-        f"{result['classification'].lower()}. It has {result['usable']} of {result['total']}"
-        f"usable observations.\n"
+        "Usable observations:",
+        str(r["usable"]) + "/" + str(r["total"])
     )
+    print("Classification:", r["classification"])
 
-    if result["summaries"]:
+    if r["summary"]:
+        print()
         print(
-            f"{'Measurement':<18}"
+            f"{'Measurement':<20}"
             f"{'Average':>10}"
             f"{'Minimum':>10}"
             f"{'Maximum':>10}"
         )
 
-        for name, values in result["summaries"].items():
+        print("-" * 50)
+
+        names = {
+            "heart_rate": "Heart rate",
+            "skin_response": "Skin response",
+            "temperature": "Temperature",
+            "activity_level": "Activity level",
+            "signal_quality": "Signal quality"
+        }
+
+        for k, n in names.items():
+            x = r["summary"][k]
+
             print(
-                f"{name:<18}"
-                f"{values['average']:>10.2f}"
-                f"{values['minimum']:>10.2f}"
-                f"{values['maximum']:>10.2f}"
+                f"{n:<20}"
+                f"{x['avg']:>10.2f}"
+                f"{x['min']:>10.2f}"
+                f"{x['max']:>10.2f}"
             )
 
-    else:
-        print("There are no usable measurements to summarize.")
-
-    print(
-        f"\nExplanation:\n"
-        f"{result['reason']}"
-    )
+    print()
+    print("Explanation:")
+    print(r["explanation"])
 
 
-def run_scenario(data):
-    profile = ReferenceProfile(
-        resting_hr=65,
-        normal_temp=32.8,
-        normal_skin=1.5
-    )
+def main():
+    a = FitnessAnalyzer()
 
-    member = Member(
-        "Alex",
-        profile
-    )
+    for sc in available_scenarios():
 
-    observations = []
+        pd, od = generate_fitness_data(
+            participant_id="P001",
+            scenario=sc,
+            seed=49,
+            number_of_windows=12
+        )
 
-    for item in data:
-        obs = Observation.from_dict(item)
-        observations.append(obs)
+        s = build_session(
+            pd,
+            od,
+            sc
+        )
 
-    session = FitnessSession(
-        member,
-        observations
-    )
+        r = a.analyze(s)
 
-    result = session.analyze()
-
-    print_report(result)
+        print_report(r)
 
 
 if __name__ == "__main__":
-    for name, data in SCENARIOS.items():
-        print(f"\n--- {name} ---")
-        run_scenario(data)
+    main()
