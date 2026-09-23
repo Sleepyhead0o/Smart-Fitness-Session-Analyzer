@@ -1,3 +1,6 @@
+from statistics import mean
+from sample_data import SCENARIOS
+
 class ReferenceProfile:
     def __init__(self, resting_hr, normal_temp, normal_skin):
         self.normal_temp = normal_temp
@@ -134,7 +137,7 @@ class FitnessSession(Session):
 
         if avg_hr >= ref.resting_hr + 20 or avg_act >= 0.35:
             return (
-                "Moderate activity level",
+                "Moderate activity",
                 f"The participant have a average heart rate of {avg_hr:.1f} bpm compared with "
                 f"the resting heart rate of {ref.resting_hr} bpm.While the Average "
                 f"activity level was {avg_act:.2f}. Both values were above "
@@ -148,7 +151,7 @@ class FitnessSession(Session):
             f"activity level was only {avg_act:.2f}."
         )
 
-def analyze(self):
+    def analyze(self):
         usable = []
 
         for obs in self.observations:
