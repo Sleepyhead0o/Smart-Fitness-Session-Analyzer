@@ -80,6 +80,14 @@ Observations with a below 0.60 signal quality are rejected.
 - Heart rate and activity level are the main values used for classification.
 - Skin response and temperature are compared with baseline values.
 
+## Known limitations
+
+- The program only use simulated data.
+- The classification thresholds are manually defined.
+- Signal quality uses a fixed threshold of `0.60`.
+- Skin response and temperature do not directly determine the activity   classification.
+- The program is not intended for medical use.
+
 ## Example output
 ```text
 Scenario: moderate_activity
