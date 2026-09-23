@@ -91,6 +91,24 @@ Observations with a below 0.60 signal quality are rejected.
 
 ## Example output
 ```text
+Scenario: resting
+Participant: P001
+Usable observations: 12/12
+Rejected observations: 0
+Classification: resting
+
+Measurement            Average   Minimum   Maximum
+--------------------------------------------------
+Heart rate               62.17     57.00     66.00
+Skin response             1.55      1.43      1.64
+Temperature              33.09     32.96     33.21
+Activity level            0.12      0.03      0.19
+Signal quality            0.90      0.83      0.98
+
+Explanation:
+The activity level is low. Average heart rate is 62.2 bpm compared with the baseline of 60 bpm.
+
+==========================================================
 Scenario: moderate_activity
 Participant: P001
 Usable observations: 12/12
@@ -107,4 +125,50 @@ Signal quality            0.90      0.83      0.98
 
 Explanation:
 The activity level is moderate and heart rate is 28.5 bpm above baseline. Skin response differs from baseline by 0.34 and temperature differs by 0.25 °C.
+
+==========================================================
+Scenario: high_activity
+Participant: P001
+Usable observations: 12/12
+Rejected observations: 0
+Classification: high activity
+
+Measurement            Average   Minimum   Maximum
+--------------------------------------------------
+Heart rate              118.58    104.00    130.00
+Skin response             2.16      1.90      2.38
+Temperature              33.64     33.39     33.87
+Activity level            0.82      0.69      0.93
+Signal quality            0.90      0.83      0.98
+
+Explanation:
+The activity level is high and heart rate is 58.6 bpm above baseline. Skin response differs from baseline by 0.64 and temperature differs by 0.55 °C.
+
+==========================================================
+Scenario: recovery
+Participant: P001
+Usable observations: 12/12
+Rejected observations: 0
+Classification: recovering
+
+Measurement            Average   Minimum   Maximum
+--------------------------------------------------
+Heart rate               96.42     61.00    121.00
+Skin response             1.94      1.56      2.22
+Temperature              33.36     33.17     33.57
+Activity level            0.47      0.09      0.91
+Signal quality            0.90      0.82      0.96
+
+Explanation:
+Heart rate and activity decrease near the end of the session. Average heart rate is 36.4 bpm above the participant's baseline.
+
+==========================================================
+Scenario: poor_quality
+Participant: P001
+Usable observations: 0/12
+Rejected observations: 12
+Classification: insufficient data
+
+Explanation:
+There are too few usable observations to classify the session.
 ```
