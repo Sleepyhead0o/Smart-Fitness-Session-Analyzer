@@ -15,9 +15,40 @@ class Ref:
     @hr.setter
     def hr(self, v):
         if not isinstance(v, (int, float)) or v <= 0:
-            raise ValueError("Invalid baseline heart rate")
+            raise ValueError(
+                "Invalid baseline heart rate."
+            )
 
         self.__hr = v
+
+    @property
+    def sk(self):
+        return self.__sk
+
+    @sk.setter
+    def sk(self, v):
+        if not isinstance(v, (int, float)) or v < 0:
+            raise ValueError(
+                "Invalid baseline skin response."
+            )
+
+        self.__sk = v
+
+    @property
+    def tp(self):
+        return self.__tp
+
+    @tp.setter
+    def tp(self, v):
+        if (
+            not isinstance(v, (int, float))
+            or not 25 <= v <= 42
+        ):
+            raise ValueError(
+                "Invalid baseline temperature."
+            )
+
+        self.__tp = v
 
 
 class Person:
@@ -25,7 +56,8 @@ class Person:
         self.pid = pid
         self.ref = ref
 
-# One Observation
+
+# One observation
 class Obs:
     def __init__(self, t, hr, sk, tp, act, q):
         self.t = t
@@ -50,7 +82,7 @@ class Obs:
 
     def validate(self):
         if not isinstance(self.t, int) or self.t < 0:
-            return False, "Invalid timestamp. A timestamp must be an integer with a number greater than or equal to 0"
+            return False, "Invalid timestamp. It must be an integer with a value greater than or equal to zero."
 
         if (
             not isinstance(self.hr, (int, float))
@@ -68,7 +100,7 @@ class Obs:
             not isinstance(self.tp, (int, float))
             or not 25 <= self.tp <= 42
         ):
-            return False, "Invalid temperature. It have to be a number between 25 and 42."
+            return False, "Invalid temperature. It has to be a number between 25 and 42. "
 
         if (
             not isinstance(self.act, (int, float))
@@ -87,6 +119,7 @@ class Obs:
 
         return True, ""
 
+
 # Multiple observations
 class Session:
     def __init__(self, p, obs, sc):
@@ -96,31 +129,21 @@ class Session:
 
     @property
     def good(self):
-        return [o for o in self.obs if o.ok]
+        return [
+            o
+            for o in self.obs
+            if o.ok
+        ]
 
 
-class Analyzer:
-    def classify(self, s):
-        raise NotImplementedError
-
-# FitnessAnalyzer inherits from Analyzer. Method overriding
-class FitnessAnalyzer(Analyzer):
+class ActivityAnalysis:
     def classify(self, s):
         g = s.good
-
-        if len(g) < 3:
-            return "insufficient data"
-
-        if len(g) / len(s.obs) < 0.50:
-            return "insufficient data"
 
         hr = [o.hr for o in g]
         ac = [o.act for o in g]
 
         dhr = avg(hr) - s.p.ref.hr
-
-        if drop(hr) >= 20 and drop(ac) >= 0.20:
-            return "recovering"
 
         if avg(ac) >= 0.67 or dhr >= 45:
             return "high activity"
@@ -129,6 +152,46 @@ class FitnessAnalyzer(Analyzer):
             return "moderate activity"
 
         return "resting"
+
+
+class RecoveryAnalysis:
+    def check(self, s):
+        g = s.good
+
+        if len(g) < 6:
+            return False
+
+        hr = [o.hr for o in g]
+        ac = [o.act for o in g]
+
+        return (
+            drop(hr) >= 20
+            and drop(ac) >= 0.20
+        )
+
+
+# FitnessAnalyzer uses composition
+class FitnessAnalyzer:
+    def __init__(self):
+        self.act = ActivityAnalysis()
+        self.rec = RecoveryAnalysis()
+
+    def classify(self, s):
+        g = s.good
+
+        if len(g) < 3:
+            return "insufficient data"
+
+        if len(s.obs) == 0:
+            return "insufficient data"
+
+        if len(g) / len(s.obs) < 0.50:
+            return "insufficient data"
+
+        if self.rec.check(s):
+            return "recovering"
+
+        return self.act.classify(s)
 
     def analyze(self, s):
         g = s.good
@@ -171,40 +234,43 @@ class FitnessAnalyzer(Analyzer):
         }
 
         hr = r["summary"]["heart_rate"]["avg"]
+        sk = r["summary"]["skin_response"]["avg"]
+        tp = r["summary"]["temperature"]["avg"]
         ac = r["summary"]["activity_level"]["avg"]
 
         dhr = hr - s.p.ref.hr
+        dsk = sk - s.p.ref.sk
+        dtp = tp - s.p.ref.tp
 
         if c == "recovering":
             txt = (
-                "Heart rate and activity decrease near the "
-                "end of the session. "
-                f"Average heart rate is {dhr:.1f} bpm "
-                "above the participant's baseline."
+                "Heart rate and activity decrease near the end of the session. "
+                f"Average heart rate is {dhr:.1f} bpm above the "
+                "participant's baseline."
             )
 
         elif c == "high activity":
             txt = (
-                f"Average activity level is {ac:.2f} and "
-                f"heart rate is {dhr:.1f} bpm above baseline."
+                f"The activity level is high and heart rate is {dhr:.1f} bpm above baseline. "
+                f"Skin response differs from baseline by {dsk:.2f} and temperature differs by {dtp:.2f} °C."
             )
 
         elif c == "moderate activity":
             txt = (
-                f"Average activity level is {ac:.2f} and "
-                f"heart rate is {dhr:.1f} bpm above baseline."
+                f"The activity level is moderate and heart rate is {dhr:.1f} bpm above baseline. "
+                f"Skin response differs from baseline by {dsk:.2f} and temperature differs by {dtp:.2f} °C."
             )
 
         elif c == "resting":
             txt = (
-                "Activity is low and heart rate is close "
-                f"to the baseline of {s.p.ref.hr} bpm."
+                f"The activity level is low. Average heart rate is {hr:.1f} bpm compared "
+                f"with the baseline of {s.p.ref.hr} bpm."
             )
 
         else:
             txt = (
-                "There are too few usable observations "
-                "to classify the session."
+                f"Only {len(g)} of {len(s.obs)} observations are usable. "
+                "There are too few usable observations to classify the session."
             )
 
         r["explanation"] = txt
@@ -268,14 +334,25 @@ def print_report(r):
 
     print("Scenario:", r["scenario"])
     print("Participant:", r["participant"])
+
     print(
         "Usable observations:",
         str(r["usable"]) + "/" + str(r["total"])
     )
-    print("Classification:", r["classification"])
+
+    print(
+        "Rejected observations:",
+        r["rejected"]
+    )
+
+    print(
+        "Classification:",
+        r["classification"]
+    )
 
     if r["summary"]:
         print()
+
         print(
             f"{'Measurement':<20}"
             f"{'Average':>10}"
@@ -312,7 +389,6 @@ def main():
     a = FitnessAnalyzer()
 
     for sc in available_scenarios():
-
         pd, od = generate_fitness_data(
             participant_id="P001",
             scenario=sc,
