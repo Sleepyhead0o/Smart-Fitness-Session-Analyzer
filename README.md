@@ -15,6 +15,17 @@ python -m unittest tests.py </br>
 ## Project structure
 Smart-Fitness-Session-Analyzer/
 │</br>
+├── data/</br>
+│   ├── participants.csv</br>
+│   ├── fitness_sessions.csv</br>
+│   └── fitness_sessions_invalid.csv</br>
+│</br>
+├── fitness/</br>
+│   ├── __init__.py</br>
+│   ├── models.py</br>
+│   ├── analysis.py</br>
+│   └── datahandling_io.py</br>
+│</br>
 ├── main.py</br>
 ├── data_generator.py</br>
 ├── tests.py</br>
@@ -26,7 +37,7 @@ Smart-Fitness-Session-Analyzer/
 
 This project is a small and simple object oriented Python program. That analyzes simulated fitness-session data.
 
-The program receives a participant profile and a list of observations from the `data_generator.py`. The generator returns raw dictionaries and lists. While the program converts the data into objects, validates the measurements, analyzes the session, classifies the activity level and prints out a report.
+The program reads participant profiles and fitness-session observations from CSV files. It validates the data, rejects invalid records, groups observations into sessions and connects each session to a participant. Each valid session is analyzed and classified. Three output files are created and it prints out a short completion summary showing the accepted rows, rejected rows and created report files.
 
 The possible classifications are:
 
@@ -38,6 +49,7 @@ The possible classifications are:
 
 The program calculates for each session the average, minimum and maximum values
 for heart rate, skin response, temperature, activity level and signal quality. Also the amount of usable or rejected observations and an explanation of the classification is reported.
+
 
 ## Class design and responsiblity 
 
