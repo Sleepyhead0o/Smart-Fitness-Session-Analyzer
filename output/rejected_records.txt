@@ -1,0 +1,17 @@
+Source | Row | Field | Reason
+----------------------------------------------------------------------
+fitness_sessions.csv | 26 | signal_quality | Poor signal quality. The value must be 0.60 or higher.
+fitness_sessions.csv | 27 | signal_quality | Poor signal quality. The value must be 0.60 or higher.
+fitness_sessions.csv | 28 | signal_quality | Poor signal quality. The value must be 0.60 or higher.
+fitness_sessions.csv | 29 | signal_quality | Poor signal quality. The value must be 0.60 or higher.
+fitness_sessions.csv | 30 | signal_quality | Poor signal quality. The value must be 0.60 or higher.
+fitness_sessions_invalid.csv | 3 | heart_rate | Invalid value for heart_rate: 'fast'.
+fitness_sessions_invalid.csv | 4 | participant_id | Invalid participant_id: '001'.
+fitness_sessions_invalid.csv | 5 | activity_level | Missing required field: activity_level.
+fitness_sessions_invalid.csv | 6 | signal_quality | signal_quality must be between 0 and 1.
+fitness_sessions_invalid.csv | 7 | session_id | Invalid session_id: 'FIT-26-102'.
+fitness_sessions_invalid.csv | 8 | participant_id | Unknown participant ID: P999.
+fitness_sessions_invalid.csv | 9 | timestamp | Invalid value for timestamp: 'two'.
+fitness_sessions_invalid.csv | 10 | heart_rate | heart_rate must be between 35 and 205.
+fitness_sessions_invalid.csv | 11 | skin_response | skin_response cannot be negative.
+fitness_sessions_invalid.csv | 12 | signal_quality | Missing required field: signal_quality.

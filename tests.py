@@ -1,142 +1,214 @@
+import tempfile
 import unittest
 
-from data_generator import generate_fitness_data
+from pathlib import Path
 
-from main import (
-    Ref,
-    Obs,
+from fitness import (
     FitnessAnalyzer,
-    build_session
+    read_people,
+    read_sessions
+)
+
+
+P_HEAD = (
+    "participant_id,name,"
+    "baseline_heart_rate,"
+    "baseline_skin_response,"
+    "baseline_temperature\n"
+)
+
+
+S_HEAD = (
+    "session_id,participant_id,"
+    "timestamp,heart_rate,"
+    "skin_response,temperature,"
+    "activity_level,signal_quality\n"
 )
 
 
 class TestFitness(unittest.TestCase):
 
-    def test_resting(self):
-        pd, od = generate_fitness_data(
-            participant_id="P001",
-            scenario="resting",
-            seed=42,
-            number_of_windows=12
-        )
+    def test_valid_data(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
 
-        s = build_session(
-            pd,
-            od,
-            "resting"
-        )
+            p = td / "participants.csv"
+            s = td / "sessions.csv"
 
-        a = FitnessAnalyzer()
+            p.write_text(
+                P_HEAD
+                + "P001,Alex,60,1.5,33.0\n",
+                encoding="utf-8"
+            )
 
-        self.assertEqual(
-            a.classify(s),
-            "resting"
-        )
+            s.write_text(
+                S_HEAD
+                + "FIT-2026-001,P001,0,62,1.5,33.0,0.10,0.90\n"
+                + "FIT-2026-001,P001,1,64,1.6,33.1,0.12,0.91\n"
+                + "FIT-2026-001,P001,2,63,1.5,33.0,0.11,0.92\n",
+                encoding="utf-8"
+            )
 
-    def test_moderate(self):
-        pd, od = generate_fitness_data(
-            participant_id="P001",
-            scenario="moderate_activity",
-            seed=42,
-            number_of_windows=12
-        )
+            ppl, pr = read_people(p)
 
-        s = build_session(
-            pd,
-            od,
-            "moderate_activity"
-        )
+            ses, sr, ok = read_sessions(
+                s,
+                ppl
+            )
 
-        a = FitnessAnalyzer()
+            self.assertEqual(
+                len(pr),
+                0
+            )
 
-        self.assertEqual(
-            a.classify(s),
-            "moderate activity"
-        )
+            self.assertEqual(
+                len(sr),
+                0
+            )
 
-    def test_high(self):
-        pd, od = generate_fitness_data(
-            participant_id="P001",
-            scenario="high_activity",
-            seed=42,
-            number_of_windows=12
-        )
+            self.assertEqual(
+                ok,
+                3
+            )
 
-        s = build_session(
-            pd,
-            od,
-            "high_activity"
-        )
+            self.assertEqual(
+                len(ses),
+                1
+            )
 
-        a = FitnessAnalyzer()
+            an = FitnessAnalyzer()
 
-        self.assertEqual(
-            a.classify(s),
-            "high activity"
-        )
+            self.assertEqual(
+                an.classify(ses[0]),
+                "resting"
+            )
 
-    def test_recovery(self):
-        pd, od = generate_fitness_data(
-            participant_id="P001",
-            scenario="recovery",
-            seed=42,
-            number_of_windows=12
-        )
+    def test_invalid_data(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
 
-        s = build_session(
-            pd,
-            od,
-            "recovery"
-        )
+            p = td / "participants.csv"
+            s = td / "sessions.csv"
 
-        a = FitnessAnalyzer()
+            p.write_text(
+                P_HEAD
+                + "P001,Alex,60,1.5,33.0\n",
+                encoding="utf-8"
+            )
 
-        self.assertEqual(
-            a.classify(s),
-            "recovering"
-        )
+            s.write_text(
+                S_HEAD
+                + "FIT-2026-001,P001,0,fast,1.5,33.0,0.20,0.90\n",
+                encoding="utf-8"
+            )
 
-    def test_poor_quality(self):
-        pd, od = generate_fitness_data(
-            participant_id="P001",
-            scenario="poor_quality",
-            seed=42,
-            number_of_windows=12
-        )
+            ppl, _ = read_people(p)
 
-        s = build_session(
-            pd,
-            od,
-            "poor_quality"
-        )
+            _, rej, ok = read_sessions(
+                s,
+                ppl
+            )
 
-        a = FitnessAnalyzer()
+            self.assertEqual(
+                ok,
+                0
+            )
 
-        self.assertEqual(
-            a.classify(s),
-            "insufficient data"
-        )
+            self.assertEqual(
+                len(rej),
+                1
+            )
 
-    def test_invalid_hr(self):
-        d = {
-            "timestamp": 0,
-            "heart_rate": 265,
-            "skin_response": 1.5,
-            "temperature": 32.5,
-            "activity_level": 0.5,
-            "signal_quality": 0.9
-        }
+            self.assertEqual(
+                rej[0]["field"],
+                "heart_rate"
+            )
 
-        o = Obs.from_dict(d)
+    def test_invalid_id(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
 
-        self.assertFalse(o.ok)
+            p = td / "participants.csv"
+            s = td / "sessions.csv"
 
-    def test_private_hr(self):
-        with self.assertRaises(ValueError):
-            Ref(
-                -10,
-                1.5,
-                32.5
+            p.write_text(
+                P_HEAD
+                + "P001,Alex,60,1.5,33.0\n",
+                encoding="utf-8"
+            )
+
+            s.write_text(
+                S_HEAD
+                + "FIT-26-001,P001,0,70,1.5,33.0,0.20,0.90\n",
+                encoding="utf-8"
+            )
+
+            ppl, _ = read_people(p)
+
+            _, rej, ok = read_sessions(
+                s,
+                ppl
+            )
+
+            self.assertEqual(
+                ok,
+                0
+            )
+
+            self.assertEqual(
+                rej[0]["field"],
+                "session_id"
+            )
+
+    def test_boundary_values(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+
+            p = td / "participants.csv"
+            s = td / "sessions.csv"
+
+            p.write_text(
+                P_HEAD
+                + "P001,Alex,60,1.5,33.0\n",
+                encoding="utf-8"
+            )
+
+            s.write_text(
+                S_HEAD
+                + "FIT-2026-001,P001,0,35,0,25,0,0.60\n"
+                + "FIT-2026-001,P001,1,205,0,42,1,1\n"
+                + "FIT-2026-001,P001,2,60,1.5,33,0.1,0.9\n",
+                encoding="utf-8"
+            )
+
+            ppl, _ = read_people(p)
+
+            ses, rej, ok = read_sessions(
+                s,
+                ppl
+            )
+
+            self.assertEqual(
+                len(rej),
+                0
+            )
+
+            self.assertEqual(
+                ok,
+                3
+            )
+
+            self.assertEqual(
+                len(ses[0].obs),
+                3
+            )
+
+    def test_missing_file(self):
+        with self.assertRaises(
+            FileNotFoundError
+        ):
+            read_people(
+                "file_does_not_exist.csv"
             )
 
 

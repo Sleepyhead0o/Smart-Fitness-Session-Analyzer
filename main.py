@@ -7,7 +7,7 @@ from fitness import (
     InvalidRecordError,
     read_people,
     read_sessions,
-    save
+    save_reports
 )
 
 
@@ -104,7 +104,7 @@ def main():
         for s in ses
     ]
 
-    files = save(
+    files = save_reports(
         a.output,
         res,
         rej

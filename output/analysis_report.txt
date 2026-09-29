@@ -1,0 +1,49 @@
+Session: FIT-2026-001
+Participant: P001 - Amina Noor
+Usable observations: 6/6
+Rejected observations: 0
+Classification: resting
+Explanation: Average activity is low at 0.09. Heart rate is 68.8 bpm compared with the baseline of 68.0 bpm.
+------------------------------------------------------------
+Session: FIT-2026-002
+Participant: P002 - Jonas Berg
+Usable observations: 6/6
+Rejected observations: 0
+Classification: moderate activity
+Explanation: Average activity is 0.49 and heart rate is 28.0 bpm above baseline. Skin response differs by 0.56 and temperature by 0.43 °C.
+------------------------------------------------------------
+Session: FIT-2026-003
+Participant: P003 - Maya Chen
+Usable observations: 6/6
+Rejected observations: 0
+Classification: high activity
+Explanation: Average activity is 0.75 and heart rate is 69.5 bpm above baseline. Skin response differs by 2.14 and temperature by 1.23 °C.
+------------------------------------------------------------
+Session: FIT-2026-004
+Participant: P001 - Amina Noor
+Usable observations: 6/6
+Rejected observations: 0
+Classification: high activity
+Explanation: Average activity is 0.55 and heart rate is 45.2 bpm above baseline. Skin response differs by 1.38 and temperature by 0.88 °C.
+------------------------------------------------------------
+Session: FIT-2026-005
+Participant: P002 - Jonas Berg
+Usable observations: 0/5
+Rejected observations: 5
+Classification: insufficient data
+Explanation: There are no usable observations to classify the session.
+------------------------------------------------------------
+Session: FIT-2026-101
+Participant: P001 - Amina Noor
+Usable observations: 1/3
+Rejected observations: 2
+Classification: insufficient data
+Explanation: Only 1 of 3 observations are usable. There are too few usable observations to classify the session.
+------------------------------------------------------------
+Session: FIT-2026-102
+Participant: P002 - Jonas Berg
+Usable observations: 0/3
+Rejected observations: 3
+Classification: insufficient data
+Explanation: There are no usable observations to classify the session.
+------------------------------------------------------------
