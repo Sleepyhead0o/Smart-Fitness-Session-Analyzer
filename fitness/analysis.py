@@ -16,7 +16,7 @@ def stats(v):
         "min": min(v),
         "max": max(v)
     }
-
+"""
 # Calculates how much a value decrease at the start of a session compared with the end.
 # Example: If drop() returns a large positive value, it means that the heart rate have fallen.
 def drop(v):
@@ -29,6 +29,21 @@ def drop(v):
     )
 
     a = avg(v[:n])
+    b = avg(v[-n:])
+
+    return a - b 
+    """
+# Calculates how much a value decreases from the active part to the end.
+def drop(v):
+    if len(v) < 6:
+        return 0.0
+
+    n = max(
+        2,
+        len(v) // 3
+    )
+
+    a = avg(v[n:-n])
     b = avg(v[-n:])
 
     return a - b

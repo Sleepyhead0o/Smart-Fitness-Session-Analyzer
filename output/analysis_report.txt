@@ -23,8 +23,8 @@ Session: FIT-2026-004
 Participant: P001 - Amina Noor
 Usable observations: 6/6
 Rejected observations: 0
-Classification: high activity
-Explanation: Average activity is 0.55 and heart rate is 45.2 bpm above baseline. Skin response differs by 1.38 and temperature by 0.88 °C.
+Classification: recovering
+Explanation: Heart rate and activity decrease near the end of the session. Average heart rate is 45.2 bpm above baseline.
 ------------------------------------------------------------
 Session: FIT-2026-005
 Participant: P002 - Jonas Berg
