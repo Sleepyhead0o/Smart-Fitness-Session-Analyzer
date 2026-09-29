@@ -10,6 +10,7 @@ cd Smart-Fitness-Session-Analyzer </br>
 conda env create -f env.yml </br>
 conda activate fitness-analyzer </br>
 python main.py </br>
+python main.py --profiles data/participants.csv --sessions data/fitness_sessions.csv data/fitness_sessions_invalid.csv --output output </br>
 python -m unittest tests.py </br>
 
 ## Project structure
@@ -35,9 +36,10 @@ Smart-Fitness-Session-Analyzer/
 
 ## Project description
 
-This project is a small and simple object oriented Python program. That analyzes simulated fitness-session data.
+This project is a small file-based object oriented Python program. That analyzes simulated fitness-session data.
 
-The program reads participant profiles and fitness-session observations from CSV files. It validates the data, rejects invalid records, groups observations into sessions and connects each session to a participant. Each valid session is analyzed and classified. Three output files are created and it prints out a short completion summary showing the accepted rows, rejected rows and created report files.
+The program reads participant profiles and fitness-session observations from CSV files. It validates the data, rejects invalid records, groups observations into sessions and compares measurements with each participant's reference values. Each valid session is analyzed and classified. The program continues processing when individual rows contain invalid data instead of stopping the entire application.
+After the analysis, three output files are created and it prints out a short completion summary. Showing the accepted rows, rejected rows and created report files.
 
 The possible classifications are:
 
@@ -53,13 +55,47 @@ for heart rate, skin response, temperature, activity level and signal quality. A
 
 ## Class design and responsiblity 
 
+### models.py
+This module contains the main data classes used to represent participants, reference values, observations and sessions.
+
 - `Ref` – stores baseline heart rate, skin response and temperature. It also validates these values using properties and setters. 
-- `Person` – represents a participant ID and contains a `Ref` object.
-- `Obs` – represents and validates one observation.
-- `Session` – contains a participant and multiple observations.
-- `ActivityAnalysis` – classifies resting, moderate and high activity based on activity level and heart rate compared with baseline.
-- `RecoveryAnalysis` – checks whether heart rate and activity decrease near the end of the session.
-- `FitnessAnalyzer` – combines the analysis and creates the final result.
+- `Person` – represents a participant, and stores the participant ID, name and a `Ref` object with baseline values.
+- `Obs` – represents one valid fitness observation. It stores timestamp, heart rate, skin response, temperature, activity level, and signal quality.
+- `Session` – represents one complete fitness session. It connects a participant with the valid observations belonging to the session and stores the total number of observations.
+
+### analysis.py
+
+This module contains the logic used to analyze valid fitness sessions and determine their classification.
+
+
+- `ActivityAnalysis` – A session is classified as high activity, moderate activity or resting by comparing baseline with average values (hr and act). 
+
+- `RecoveryAnalysis` – Determines if a session has a recovery fase. Which is indicated by a decrease in both heart rate and activity from the active part of the session toward the end.
+
+- `FitnessAnalyzer` – combines the activity and recovery analysis. It decides the final classification and creates a structured result containing summary statistics, usable and rejected observations and an explanation.
+
+### datahandling_io.py
+
+This module is responsible for reading CSV files, validating records, handling invalid data and creating the output files.
+
+- `InvalidIdentifierError` – custom exception used when a participant ID or session ID has an invalid format.
+
+- `InvalidRecordError` – custom exception used when a CSV record are not accepted.
+
+- `read_people()` – It reads the participants.csv data file and validates records. Then two objects `Ref` and `Person` are created and it also stores rejected rows.
+
+- `read_sessions()` – It reads the session CSV data files, validates each row and connects observations to existing participants. Then it groups observations by session ID and creates the objects`Obs` and `Session`.
+
+- `save_reports()` – It creates the output directory and writes the report files in that folder.
+
+### main.py
+
+This file is the entry point of the program. It connects the different modules and controls the overall program flow. It reads command-line arguments, loads participant data, the valid and invalid session files. Then it collects the rejected records, runs `FitnessAnalyzer`, saves the reports in output directory and prints out a short completion summary.
+
+### __init__.py
+
+This file makes the `fitness` folder a Python package. It basically provides a simple way for `main.py` and `tests.py` to import the main classes and functions from that package.
+
 
 ## Object oriented programming concepts used
 
