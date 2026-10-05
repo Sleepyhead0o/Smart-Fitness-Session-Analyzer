@@ -18,7 +18,6 @@ def stats(v):
     }
 """
 # Calculates how much a value decrease at the start of a session compared with the end.
-# Example: If drop() returns a large positive value, it means that the heart rate have fallen.
 def drop(v):
     if len(v) < 6:
         return 0.0
