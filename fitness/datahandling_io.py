@@ -23,13 +23,12 @@ class InvalidRecordError(ValueError):
         super().__init__(msg)
         self.fld = fld
 
-# regex 
-PID_RE = re.compile(        # p + 3 numbers
-    r"^P\d{3}$"             # P001
+PID_RE = re.compile(        
+    r"^P\d{3}$"             
 )
 
-SID_RE = re.compile(        # FIT + 4 numbers + (-) + 3 numbers
-    r"^FIT-\d{4}-\d{3}$"    # FIT-2026-001
+SID_RE = re.compile(        
+    r"^FIT-\d{4}-\d{3}$"    
 )
 
 # Informs the program which colloums participants.csv and the session files should have
@@ -53,14 +52,14 @@ S_COLS = [
     "signal_quality"
 ]
 
-
-def check_id(v, pat, fld):      # v value, pat regrex pattern, fld field
+# v: value, pat: regrex pattern, fld: field
+def check_id(v, pat, fld):      
     if not pat.fullmatch(v or ""):
         raise InvalidIdentifierError(
             f"Invalid {fld}: {v!r}."
         )
 
-# Checks if this particular row have all required fields. If a field is missing or empty a InvalidRecordError is raised
+# Does this row have all required fields. If a field is missing or empty a InvalidRecordError is raised
 def check_req(d, cols):     # d dictionary 
     if None in d:
         raise InvalidRecordError(
@@ -79,7 +78,7 @@ def check_req(d, cols):     # d dictionary
                 f"Missing required field: {k}."
             )
 
-# converts text from csv file to numbers, from "22" to 22.0. If it contains text like "stable" an error is raised.  
+  
 def num(d, k, tp=float):
     try:
         return tp(d[k])
@@ -255,7 +254,7 @@ def read_people(path):
 def read_sessions(path, ppl):
     path = Path(path)
 
-    grp = defaultdict(list)     # group 
+    grp = defaultdict(list)     # grp group 
     own = {}                    # particiant that owns this session
     tot = defaultdict(int)      # Total number of rows for each session
 
